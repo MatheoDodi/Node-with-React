@@ -50,7 +50,7 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    fetch('URL')
+    fetch('http://localhost:8080/feed/posts')
       .then(res => {
         if (res.status !== 200) {
           throw new Error('Failed to fetch posts.');
@@ -58,6 +58,7 @@ class Feed extends Component {
         return res.json();
       })
       .then(resData => {
+        console.log(resData);
         this.setState({
           posts: resData.posts,
           totalPosts: resData.totalItems,
@@ -106,12 +107,21 @@ class Feed extends Component {
       editLoading: true
     });
     // Set up data (with image!)
-    let url = 'URL';
+    let url = 'http://localhost:8080/feed/post';
+    let method = 'POST';
     if (this.state.editPost) {
       url = 'URL';
     }
-
-    fetch(url)
+    fetch(url, {
+      method,
+      headers: {
+        'Content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        title: postData.title,
+        content: postData.content
+      })
+    })
       .then(res => {
         if (res.status !== 200 && res.status !== 201) {
           throw new Error('Creating or editing a post failed!');
@@ -126,15 +136,18 @@ class Feed extends Component {
           creator: resData.post.creator,
           createdAt: resData.post.createdAt
         };
+        console.log(post);
         this.setState(prevState => {
           let updatedPosts = [...prevState.posts];
+          console.log(updatedPosts);
           if (prevState.editPost) {
             const postIndex = prevState.posts.findIndex(
               p => p._id === prevState.editPost._id
             );
             updatedPosts[postIndex] = post;
-          } else if (prevState.posts.length < 2) {
-            updatedPosts = prevState.posts.concat(post);
+          } else if (prevState.posts.length < 5) {
+            updatedPosts = [...prevState.posts, post];
+            console.log('concat(post)', updatedPosts);
           }
           return {
             posts: updatedPosts,
@@ -200,26 +213,26 @@ class Feed extends Component {
           onCancelEdit={this.cancelEditHandler}
           onFinishEdit={this.finishEditHandler}
         />
-        <section className="feed__status">
+        <section className='feed__status'>
           <form onSubmit={this.statusUpdateHandler}>
             <Input
-              type="text"
-              placeholder="Your status"
-              control="input"
+              type='text'
+              placeholder='Your status'
+              control='input'
               onChange={this.statusInputChangeHandler}
               value={this.state.status}
             />
-            <Button mode="flat" type="submit">
+            <Button mode='flat' type='submit'>
               Update
             </Button>
           </form>
         </section>
-        <section className="feed__control">
-          <Button mode="raised" design="accent" onClick={this.newPostHandler}>
+        <section className='feed__control'>
+          <Button mode='raised' design='accent' onClick={this.newPostHandler}>
             New Post
           </Button>
         </section>
-        <section className="feed">
+        <section className='feed'>
           {this.state.postsLoading && (
             <div style={{ textAlign: 'center', marginTop: '2rem' }}>
               <Loader />
@@ -239,7 +252,7 @@ class Feed extends Component {
                 <Post
                   key={post._id}
                   id={post._id}
-                  author={post.creator.name}
+                  author={post.creator}
                   date={new Date(post.createdAt).toLocaleDateString('en-US')}
                   title={post.title}
                   image={post.imageUrl}
